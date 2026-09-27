@@ -1,0 +1,10 @@
+{
+  "description": "Helps small business owners monitor inventory and orders, identify issues, and receive AI-driven action plans to optimize daily operations efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

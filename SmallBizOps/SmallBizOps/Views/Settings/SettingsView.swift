@@ -1,0 +1,112 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var store: MockDataStore
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                BackHeader(title: "Settings", onBack: { router.go(.home) })
+
+                profileCard
+                    .padding(.top, 8)
+
+                ForEach(MockData.settingsGroups) { group in
+                    Text(group.title)
+                        .font(.system(size: 10, weight: .heavy)).tracking(1.1)
+                        .foregroundColor(.appLightMuted)
+                        .padding(.top, 22)
+                        .padding(.bottom, 8)
+
+                    settingsCard(group)
+                }
+
+                HStack(spacing: 5) {
+                    Image(systemName: "shield").font(.system(size: 13))
+                    Text("Built for privacy. Designed for small business.")
+                }
+                .font(.system(size: 9))
+                .foregroundColor(.appLightMuted)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+        }
+        .background(Color.appOffWhite)
+    }
+
+    private var profileCard: some View {
+        HStack(spacing: 13) {
+            Circle()
+                .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 54, height: 54)
+                .overlay(Text(MockData.business.ownerInitials).font(.system(size: 14, weight: .bold)).foregroundColor(.white))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(MockData.business.ownerName).font(.system(size: 18, weight: .bold))
+                Text("\(MockData.business.role) · \(MockData.business.businessName)").font(.appCaption()).foregroundColor(.appMuted)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func settingsCard(_ group: SettingsGroup) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(group.rows.enumerated()), id: \.element.id) { index, row in
+                settingsRow(row)
+                if index < group.rows.count - 1 {
+                    Divider().background(Color.appLine)
+                }
+            }
+        }
+        .appCard(padding: 0)
+    }
+
+    @ViewBuilder
+    private func settingsRow(_ row: SettingsRow) -> some View {
+        if row.title == "Face ID" {
+            HStack(spacing: 11) {
+                iconTile(row.iconName)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(row.title).font(.appRowTitle())
+                    Text(store.faceIDEnabled ? "Enabled" : "Disabled").font(.appCaption()).foregroundColor(.appMuted)
+                }
+                Spacer()
+                Toggle("", isOn: $store.faceIDEnabled)
+                    .labelsHidden()
+                    .tint(.appTeal)
+            }
+            .padding(.horizontal, 12)
+            .frame(minHeight: 59)
+        } else {
+            Button {} label: {
+                HStack(spacing: 11) {
+                    iconTile(row.iconName)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(row.title).font(.appRowTitle()).foregroundColor(.primary)
+                        Text(row.subtitle).font(.appCaption()).foregroundColor(.appMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
+                }
+                .padding(.horizontal, 12)
+                .frame(minHeight: 59)
+            }
+            .buttonStyle(.press)
+        }
+    }
+
+    private func iconTile(_ icon: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 15))
+            .foregroundColor(Color(hex: "56667D"))
+            .frame(width: 34, height: 34)
+            .background(Color(hex: "EDF1F6"))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+#Preview {
+    SettingsView().environmentObject(AppRouter()).environmentObject(MockDataStore())
+}
