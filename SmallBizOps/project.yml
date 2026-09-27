@@ -15,6 +15,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSFaceIDUsageDescription: "SmallBizOps uses Face ID to sign you in securely."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.northstargoods.smallbizops

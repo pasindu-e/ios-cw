@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var store: MockDataStore
+    @EnvironmentObject var auth: AuthStore
 
     var body: some View {
         ScrollView {
@@ -21,6 +22,22 @@ struct SettingsView: View {
 
                     settingsCard(group)
                 }
+
+                Button {
+                    router.go(.home)
+                    auth.signOut()
+                } label: {
+                    Text("Log Out")
+                        .font(.appButton())
+                        .foregroundColor(.appDanger)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 50)
+                        .background(Color.white)
+                        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(Color.appLine, lineWidth: 1))
+                        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                }
+                .buttonStyle(.press)
+                .padding(.top, 22)
 
                 HStack(spacing: 5) {
                     Image(systemName: "shield").font(.system(size: 13))
@@ -108,5 +125,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView().environmentObject(AppRouter()).environmentObject(MockDataStore())
+    SettingsView().environmentObject(AppRouter()).environmentObject(MockDataStore()).environmentObject(AuthStore())
 }

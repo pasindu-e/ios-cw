@@ -5,7 +5,7 @@ final class MockDataStore: ObservableObject {
     @Published var products: [Product] = MockData.products
     @Published var orders: [Order] = MockData.orders
     @Published var tasks: [TaskItem] = MockData.initialTasks
-    @Published var faceIDEnabled: Bool = true
+    @Published var faceIDEnabled: Bool = false
     @Published var lastReorderApproval: (product: String, quantity: Int, total: Double)? = nil
     @Published var createdFollowUpTaskForOrder: Set<String> = []
 
