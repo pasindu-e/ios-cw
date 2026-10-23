@@ -1,6 +1,6 @@
 import Foundation
 
-enum OrderStatus: String, CaseIterable {
+enum OrderStatus: String, CaseIterable, Codable {
     case pending = "Pending"
     case processing = "Processing"
     case delayed = "Delayed"
@@ -14,20 +14,20 @@ enum OrderStatus: String, CaseIterable {
     }
 }
 
-struct OrderLineItem: Identifiable {
+struct OrderLineItem: Identifiable, Codable {
     let id = UUID()
     let title: String
     let amount: Double
 }
 
-struct OrderStatusStep: Identifiable {
+struct OrderStatusStep: Identifiable, Codable {
     let id = UUID()
     let title: String
     let subtitle: String
     let complete: Bool
 }
 
-struct Order: Identifiable, Hashable {
+struct Order: Identifiable, Hashable, Codable {
     var id: String // e.g. #ORD-1048
     let customer: String
     let email: String

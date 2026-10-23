@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var store: MockDataStore
 
     var body: some View {
         ScrollView {
@@ -21,8 +22,10 @@ struct ActivityView: View {
                 .padding(.top, 22)
                 .padding(.bottom, 10)
 
-                RunCard(run: MockData.todayRun) { router.go(.runDetail) }
-                    .padding(.bottom, 10)
+                if let todayRun = store.todayRun {
+                    RunCard(run: todayRun) { router.go(.runDetail) }
+                        .padding(.bottom, 10)
+                }
 
                 Text("YESTERDAY")
                     .font(.system(size: 10, weight: .heavy)).tracking(1.1)
@@ -30,12 +33,14 @@ struct ActivityView: View {
                     .padding(.top, 12)
                     .padding(.bottom, 8)
 
-                ForEach(MockData.activityEvents) { event in
+                ForEach(store.activityEvents) { event in
                     activityRow(event)
                         .padding(.bottom, 8)
                 }
 
-                RunCard(run: MockData.yesterdayRun) { router.go(.runDetail) }
+                if let yesterdayRun = store.yesterdayRun {
+                    RunCard(run: yesterdayRun) { router.go(.runDetail) }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
@@ -64,11 +69,11 @@ struct ActivityView: View {
 
     private var summary: some View {
         HStack(spacing: 0) {
-            summaryItem(value: "7", label: "Agent runs")
+            summaryItem(value: "\(store.agentRuns.count)", label: "Agent runs")
             Divider().overlay(Color.white.opacity(0.12))
-            summaryItem(value: "12", label: "Issues found")
+            summaryItem(value: "\(store.agentRuns.reduce(0) { $0 + $1.findingsCount })", label: "Issues found")
             Divider().overlay(Color.white.opacity(0.12))
-            summaryItem(value: "9", label: "Tasks created")
+            summaryItem(value: "\(store.tasks.count)", label: "Tasks created")
         }
         .padding(.vertical, 15)
         .background(LinearGradient(colors: [.appNavy, Color(hex: "273859")], startPoint: .leading, endPoint: .trailing))
@@ -142,5 +147,5 @@ private struct RunCard: View {
 }
 
 #Preview {
-    ActivityView().environmentObject(AppRouter())
+    ActivityView().environmentObject(AppRouter()).environmentObject(MockDataStore())
 }

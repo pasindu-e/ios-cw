@@ -1,6 +1,6 @@
 import Foundation
 
-enum StockStatus: String {
+enum StockStatus: String, Codable {
     case lowStock = "Low stock"
     case inStock = "In stock"
 
@@ -12,17 +12,17 @@ enum StockStatus: String {
     }
 }
 
-struct Product: Identifiable, Hashable {
+struct Product: Identifiable, Hashable, Codable {
     var id: String { sku }
-    let name: String
-    let sku: String
-    let stock: Int
-    let minimum: Int
-    let status: StockStatus
-    let category: String
-    let supplier: String
-    let unitCost: Double
-    let averageDailyUsage: Double
+    var name: String
+    var sku: String
+    var stock: Int
+    var minimum: Int
+    var status: StockStatus
+    var category: String
+    var supplier: String
+    var unitCost: Double
+    var averageDailyUsage: Double
 
     static func == (lhs: Product, rhs: Product) -> Bool { lhs.sku == rhs.sku }
     func hash(into hasher: inout Hasher) { hasher.combine(sku) }

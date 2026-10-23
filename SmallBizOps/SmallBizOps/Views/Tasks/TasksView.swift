@@ -4,6 +4,10 @@ struct TasksView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var store: MockDataStore
     @State private var tab = "Today"
+    @State private var showingAddTask = false
+    @State private var taskToEdit: TaskItem?
+    @State private var taskToDelete: TaskItem?
+    @State private var deleteErrorMessage: String?
 
     private let tabs = ["Today", "Upcoming", "Completed"]
 
@@ -16,11 +20,16 @@ struct TasksView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 BackHeader(title: "Tasks", onBack: { router.go(.home) }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Color.appNavy)
-                        .clipShape(Circle())
+                    Button {
+                        showingAddTask = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.appNavy)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.press)
                 }
 
                 segmented
@@ -42,8 +51,22 @@ struct TasksView: View {
                     emptyState
                 } else {
                     ForEach(visibleTasks) { task in
-                        TaskRow(task: task) {
+                        TaskRow(task: task, onToggle: {
                             store.toggleTask(task)
+                        }, onEdit: {
+                            taskToEdit = task
+                        })
+                        .contextMenu {
+                            Button {
+                                taskToEdit = task
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) {
+                                taskToDelete = task
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                         .padding(.bottom, 9)
                     }
@@ -54,6 +77,31 @@ struct TasksView: View {
         }
         .background(Color.appOffWhite)
         .animation(.easeInOut, value: store.tasks.map(\.isCompleted))
+        .sheet(isPresented: $showingAddTask) {
+            AddEditTaskView().environmentObject(store)
+        }
+        .sheet(item: $taskToEdit) { task in
+            AddEditTaskView(taskToEdit: task).environmentObject(store)
+        }
+        .alert("Delete Task?", isPresented: Binding(get: { taskToDelete != nil }, set: { if !$0 { taskToDelete = nil } })) {
+            Button("Cancel", role: .cancel) { taskToDelete = nil }
+            Button("Delete", role: .destructive) {
+                guard let task = taskToDelete else { return }
+                store.deleteTask(task) { result in
+                    if case .failure(let error) = result {
+                        deleteErrorMessage = error.localizedDescription
+                    }
+                    taskToDelete = nil
+                }
+            }
+        } message: {
+            Text("This removes \"\(taskToDelete?.title ?? "this task")\" permanently.")
+        }
+        .alert("Couldn't Delete Task", isPresented: Binding(get: { deleteErrorMessage != nil }, set: { if !$0 { deleteErrorMessage = nil } })) {
+            Button("OK") { deleteErrorMessage = nil }
+        } message: {
+            Text(deleteErrorMessage ?? "")
+        }
     }
 
     private var segmented: some View {

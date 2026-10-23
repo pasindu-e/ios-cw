@@ -5,6 +5,7 @@ struct InventoryView: View {
     @EnvironmentObject var store: MockDataStore
     @State private var filter = "All"
     @State private var searchText = ""
+    @State private var showingAddProduct = false
 
     private let filters = ["All", "Low stock", "Beverages", "Supplies"]
 
@@ -35,7 +36,7 @@ struct InventoryView: View {
                 HStack {
                     Text(filter == "All" ? "All products" : filter).font(.appSectionTitle())
                     Spacer()
-                    Text("\(filter == "All" ? 24 : filteredProducts.count) items").font(.appCaption()).foregroundColor(.appMuted)
+                    Text("\(filteredProducts.count) items").font(.appCaption()).foregroundColor(.appMuted)
                 }
                 .padding(.top, 22)
                 .padding(.bottom, 10)
@@ -59,16 +60,21 @@ struct InventoryView: View {
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .sheet(isPresented: $showingAddProduct) {
+            AddProductView().environmentObject(store)
+        }
     }
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Inventory").font(.appHeroTitle())
-                Text("24 products · Updated just now").font(.appCaption()).foregroundColor(.appMuted)
+                Text("\(store.products.count) products · Updated just now").font(.appCaption()).foregroundColor(.appMuted)
             }
             Spacer()
-            Button {} label: {
+            Button {
+                showingAddProduct = true
+            } label: {
                 Image(systemName: "plus")
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
@@ -117,11 +123,11 @@ struct InventoryView: View {
 
     private var summary: some View {
         HStack(spacing: 0) {
-            summaryItem(value: "24", label: "Tracked", color: .white)
+            summaryItem(value: "\(store.products.count)", label: "Tracked", color: .white)
             Divider().overlay(Color.white.opacity(0.12))
-            summaryItem(value: "2", label: "Low stock", color: Color(hex: "FFC66D"))
+            summaryItem(value: "\(store.lowStockCount)", label: "Low stock", color: Color(hex: "FFC66D"))
             Divider().overlay(Color.white.opacity(0.12))
-            summaryItem(value: "0", label: "Out of stock", color: .white)
+            summaryItem(value: "\(store.products.filter { $0.stock == 0 }.count)", label: "Out of stock", color: .white)
         }
         .padding(.vertical, 15)
         .background(Color.appNavy)

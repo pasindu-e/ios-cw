@@ -20,6 +20,8 @@
 	<string>1</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>SmallBizOps uses Face ID to sign you in securely.</string>
+	<key>GOOGLE_UTILITIES_APP_DELEGATE_PROXY_ENABLED</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

@@ -16,10 +16,10 @@ struct LoginView: View {
                     .padding(.bottom, 32)
 
                 VStack(alignment: .leading, spacing: 14) {
-                    fieldLabel("Email or username")
+                    fieldLabel("Email")
                     inputField(
                         text: $username,
-                        placeholder: "pasindu",
+                        placeholder: "you@business.com",
                         icon: "person",
                         isSecure: false,
                         field: .username
@@ -53,25 +53,18 @@ struct LoginView: View {
                 }
                 .padding(.top, 4)
 
-                PrimaryButton(title: "Sign In", style: .dark) {
+                PrimaryButton(title: auth.isSigningIn ? "Signing In…" : "Sign In", style: .dark) {
                     focusedField = nil
                     auth.signIn(username: username, password: password)
                 }
+                .disabled(auth.isSigningIn)
                 .padding(.top, 22)
 
                 dividerRow
                     .padding(.top, 22)
                     .padding(.bottom, 18)
 
-                VStack(spacing: 10) {
-                    SocialButton(title: "Continue with Apple", systemImage: "apple.logo") {}
-                    SocialButton(title: "Continue with Google", systemImage: "g.circle") {}
-                }
-
-                Text("Demo credentials: pasindu / 12345678")
-                    .font(.system(size: 10))
-                    .foregroundColor(.appLightMuted)
-                    .padding(.top, 22)
+                SocialButton(title: "Continue with Google", systemImage: "g.circle") {}
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
@@ -111,10 +104,13 @@ struct LoginView: View {
             Group {
                 if isSecure {
                     SecureField(placeholder, text: text)
+                        .textContentType(.password)
                 } else {
                     TextField(placeholder, text: text)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .keyboardType(field == .username ? .emailAddress : .default)
+                        .textContentType(.username)
                 }
             }
             .font(.system(size: 14))

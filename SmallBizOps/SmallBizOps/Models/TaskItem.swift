@@ -1,6 +1,6 @@
 import Foundation
 
-enum TaskPriority: String {
+enum TaskPriority: String, Codable {
     case high = "High"
     case medium = "Medium"
     case low = "Low"
@@ -14,11 +14,11 @@ enum TaskPriority: String {
     }
 }
 
-struct TaskItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let relatedTo: String
-    let time: String
-    let priority: TaskPriority
+struct TaskItem: Identifiable, Codable {
+    var id: String = UUID().uuidString
+    var title: String
+    var relatedTo: String
+    var time: String
+    var priority: TaskPriority
     var isCompleted: Bool = false
 }

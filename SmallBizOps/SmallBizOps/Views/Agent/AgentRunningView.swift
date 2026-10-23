@@ -6,19 +6,32 @@ private struct AgentStep {
     let icon: String
 }
 
-private let agentSteps: [AgentStep] = [
-    AgentStep(title: "Reviewing inventory levels", subtitle: "24 products scanned", icon: "viewfinder"),
-    AgentStep(title: "Checking open orders", subtitle: "8 orders reviewed", icon: "doc.text"),
-    AgentStep(title: "Identifying operational issues", subtitle: "Comparing thresholds & due dates", icon: "exclamationmark.triangle"),
-    AgentStep(title: "Preparing recommended actions", subtitle: "Prioritizing your next steps", icon: "sparkles"),
-]
-
 struct AgentRunningView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var store: MockDataStore
+    @StateObject private var agentService = AgentService()
     @State private var step = 1
     @State private var pulse = false
 
     private let stepDurations: [Double] = [0.8, 0.8, 1.0, 1.0]
+
+    private var agentSteps: [AgentStep] {
+        [
+            AgentStep(title: "Reviewing inventory levels", subtitle: "\(store.products.count) products scanned", icon: "viewfinder"),
+            AgentStep(title: "Checking open orders", subtitle: "\(store.orders.count) orders reviewed", icon: "doc.text"),
+            AgentStep(title: "Identifying operational issues", subtitle: "Comparing thresholds & due dates", icon: "exclamationmark.triangle"),
+            AgentStep(title: "Preparing recommended actions", subtitle: "Prioritizing your next steps", icon: "sparkles"),
+        ]
+    }
+
+    /// The animated timeline is purely for pacing; the real result only shows
+    /// once both the animation and the actual agent run have finished.
+    private var agentIsReady: Bool {
+        switch agentService.status {
+        case .finished, .unavailable, .failed: return true
+        case .idle, .running: return false
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,7 +57,14 @@ struct AgentRunningView: View {
             RadialGradient(colors: [Color(hex: "24335B"), .appNavy], center: UnitPoint(x: 0.5, y: 0.18), startRadius: 0, endRadius: 420)
                 .ignoresSafeArea()
         )
-        .onAppear { runSequence() }
+        .onAppear {
+            runSequence()
+            Task {
+                await agentService.run(products: store.products, orders: store.orders)
+                applyResultIfFinished()
+            }
+        }
+        .onChange(of: step) { _, _ in applyResultIfFinished() }
     }
 
     private func runSequence() {
@@ -54,6 +74,40 @@ struct AgentRunningView: View {
                 step += 1
             }
             runSequence()
+        }
+    }
+
+    /// Publishes the agent's result into the shared store once available, so
+    /// `AgentResultsView` can display it. No-ops until both the run finishes
+    /// and the intro animation reaches its final step.
+    private func applyResultIfFinished() {
+        guard step == 4 else { return }
+        let productCount = store.products.count
+        let orderCount = store.orders.count
+
+        switch agentService.status {
+        case .finished(let summary, let findings):
+            store.latestAgentSummary = summary
+            store.latestAgentFindings = findings
+            store.latestAgentTrace = [
+                TraceLine(tone: .info, label: "PLAN", detail: "Check stock against saved thresholds and review open orders"),
+                TraceLine(tone: .neutral, label: "TOOL", detail: "Firestore.products.read → \(productCount) records"),
+                TraceLine(tone: .neutral, label: "TOOL", detail: "Firestore.orders.read → \(orderCount) records"),
+                TraceLine(tone: .neutral, label: "TOOL", detail: "SystemLanguageModel.respond → on-device model call"),
+                TraceLine(tone: .success, label: "RESULT", detail: "\(findings.count) operational issue\(findings.count == 1 ? "" : "s") identified"),
+            ]
+        case .unavailable(let reason), .failed(let reason):
+            store.latestAgentSummary = nil
+            store.latestAgentFindings = nil
+            store.latestAgentTrace = [
+                TraceLine(tone: .info, label: "PLAN", detail: "Check stock against saved thresholds and review open orders"),
+                TraceLine(tone: .neutral, label: "TOOL", detail: "Firestore.products.read → \(productCount) records"),
+                TraceLine(tone: .neutral, label: "TOOL", detail: "Firestore.orders.read → \(orderCount) records"),
+                TraceLine(tone: .warning, label: "FALLBACK", detail: reason),
+                TraceLine(tone: .success, label: "RESULT", detail: "Rule-based scan applied instead"),
+            ]
+        case .idle, .running:
+            break
         }
     }
 
@@ -79,10 +133,10 @@ struct AgentRunningView: View {
             .padding(.bottom, 11)
 
             Text("OPERATIONS AGENT").font(.appEyebrow()).foregroundColor(.appTeal)
-            Text(step == 4 ? "Your plan is ready" : "Preparing your day")
+            Text(step == 4 && agentIsReady ? "Your plan is ready" : "Preparing your day")
                 .font(.system(size: 25, weight: .bold))
                 .foregroundColor(.white)
-            Text(step == 4 ? "I found three items that need your attention." : "Reviewing your business data securely on this device.")
+            Text(heroSubtitle)
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "A9B4C6"))
                 .multilineTextAlignment(.center)
@@ -108,9 +162,27 @@ struct AgentRunningView: View {
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
+    private var heroSubtitle: String {
+        guard step == 4 else {
+            return "Reviewing your business data securely on this device."
+        }
+        switch agentService.status {
+        case .finished(_, let findings):
+            return findings.isEmpty
+                ? "Nothing needs your attention today."
+                : "I found \(findings.count) item\(findings.count == 1 ? "" : "s") that need\(findings.count == 1 ? "s" : "") your attention."
+        case .unavailable(let reason):
+            return "\(reason) Showing rule-based insights instead."
+        case .failed(let reason):
+            return "\(reason) Showing rule-based insights instead."
+        case .idle, .running:
+            return "Finishing up…"
+        }
+    }
+
     @ViewBuilder
     private var footer: some View {
-        if step == 4 {
+        if step == 4 && agentIsReady {
             PrimaryButton(title: "View My Operations Brief", trailingArrow: true, style: .mint) {
                 router.go(.results)
             }

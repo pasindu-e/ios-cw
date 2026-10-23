@@ -28,14 +28,31 @@ struct HomeView: View {
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .alert("Data Sync Issue", isPresented: Binding(
+            get: { store.diagnosticMessage != nil },
+            set: { if !$0 { store.diagnosticMessage = nil } }
+        )) {
+            Button("OK") { store.diagnosticMessage = nil }
+        } message: {
+            Text(store.diagnosticMessage ?? "")
+        }
+    }
+
+    private var lastPreparedLabel: String {
+        guard let run = store.todayRun ?? store.yesterdayRun else { return "Not prepared yet" }
+        return "Last prepared \(run.dateLabel.lowercased()) · \(run.timeLabel)"
+    }
+
+    private var firstName: String {
+        store.business.ownerName.split(separator: " ").first.map(String.init) ?? store.business.ownerName
     }
 
     private var topRow: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(MockData.business.dateLabel).eyebrowStyle()
-                Text("Good morning, Alex").font(.appHeroTitle()).foregroundColor(.appNavy)
-                Text(MockData.business.businessName).font(.system(size: 14)).foregroundColor(.appMuted)
+                Text(Business.todayLabel).eyebrowStyle()
+                Text("\(Business.greeting), \(firstName)").font(.appHeroTitle()).foregroundColor(.appNavy)
+                Text(store.business.businessName).font(.system(size: 14)).foregroundColor(.appMuted)
             }
             Spacer()
             Button {
@@ -45,7 +62,7 @@ struct HomeView: View {
                     Circle()
                         .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 44, height: 44)
-                        .overlay(Text(MockData.business.ownerInitials).font(.system(size: 12, weight: .bold)).foregroundColor(.white))
+                        .overlay(Text(store.business.ownerInitials).font(.system(size: 12, weight: .bold)).foregroundColor(.white))
                     Circle().fill(Color.appTeal).frame(width: 10, height: 10)
                         .overlay(Circle().stroke(Color.appOffWhite, lineWidth: 2))
                 }
@@ -57,8 +74,8 @@ struct HomeView: View {
 
     private var kpiGrid: some View {
         HStack(spacing: 9) {
-            KPICard(icon: "shippingbox", value: "24", label: "Products", tint: .blue)
-            KPICard(icon: "doc.text", value: "8", label: "Open orders", tint: .indigo)
+            KPICard(icon: "shippingbox", value: "\(store.products.count)", label: "Products", tint: .blue)
+            KPICard(icon: "doc.text", value: "\(store.openOrdersCount)", label: "Open orders", tint: .indigo)
             KPICard(icon: "exclamationmark.triangle", value: "\(store.needsAttentionCount)", label: "Need attention", tint: .coral)
         }
     }
@@ -80,7 +97,7 @@ struct HomeView: View {
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("OPERATIONS AGENT").font(.appEyebrow()).foregroundColor(Color(hex: "D5DCFF"))
-                        Text("Last prepared yesterday").font(.system(size: 11)).foregroundColor(Color(hex: "93A1BB"))
+                        Text(lastPreparedLabel).font(.system(size: 11)).foregroundColor(Color(hex: "93A1BB"))
                     }
                 }
 
@@ -135,70 +152,107 @@ struct HomeView: View {
         .padding(.bottom, 10)
     }
 
-    private var attentionCards: some View {
-        VStack(spacing: 8) {
-            Button {
-                router.go(.product(sku: "COF-001"))
-            } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.appDanger)
-                        .frame(width: 36, height: 36)
-                        .background(Color.kpiCoralBG)
-                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Premium Coffee Beans").font(.appRowTitle()).foregroundColor(.primary)
-                        Text("4 units left · Below minimum of 10").font(.appCaption()).foregroundColor(.appMuted)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
-                }
-                .padding(12)
-            }
-            .buttonStyle(.press)
-            .appCard(padding: 0)
+    private var lowStockProducts: [Product] {
+        store.products.filter { $0.status == .lowStock }.sorted { $0.stock < $1.stock }
+    }
 
-            Button {
-                router.go(.order(id: "#ORD-1048"))
-            } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(.appWarning)
-                        .frame(width: 36, height: 36)
-                        .background(Color(hex: "FFF4DB"))
-                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Order #ORD-1048 delayed").font(.appRowTitle()).foregroundColor(.primary)
-                        Text("Shipment update is 2 days overdue").font(.appCaption()).foregroundColor(.appMuted)
+    private var delayedOrders: [Order] {
+        store.orders.filter { $0.status == .delayed }
+    }
+
+    @ViewBuilder
+    private var attentionCards: some View {
+        if lowStockProducts.isEmpty && delayedOrders.isEmpty {
+            emptyCard(icon: "checkmark.circle", text: "Nothing needs attention right now.")
+        } else {
+            VStack(spacing: 8) {
+                ForEach(lowStockProducts.prefix(2)) { product in
+                    Button {
+                        router.go(.product(sku: product.sku))
+                    } label: {
+                        HStack(spacing: 11) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.appDanger)
+                                .frame(width: 36, height: 36)
+                                .background(Color.kpiCoralBG)
+                                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(product.name).font(.appRowTitle()).foregroundColor(.primary)
+                                Text("\(product.stock) units left · Below minimum of \(product.minimum)").font(.appCaption()).foregroundColor(.appMuted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
+                        }
+                        .padding(12)
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
+                    .buttonStyle(.press)
+                    .appCard(padding: 0)
                 }
-                .padding(12)
+
+                ForEach(delayedOrders.prefix(2)) { order in
+                    Button {
+                        router.go(.order(id: order.id))
+                    } label: {
+                        HStack(spacing: 11) {
+                            Image(systemName: "clock.fill")
+                                .foregroundColor(.appWarning)
+                                .frame(width: 36, height: 36)
+                                .background(Color(hex: "FFF4DB"))
+                                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Order \(order.id) delayed").font(.appRowTitle()).foregroundColor(.primary)
+                                Text("\(order.time)").font(.appCaption()).foregroundColor(.appMuted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
+                        }
+                        .padding(12)
+                    }
+                    .buttonStyle(.press)
+                    .appCard(padding: 0)
+                }
             }
-            .buttonStyle(.press)
-            .appCard(padding: 0)
         }
     }
 
+    private var nextTask: TaskItem? {
+        store.tasks.filter { !$0.isCompleted }.first { $0.priority == .high }
+            ?? store.tasks.first { !$0.isCompleted }
+    }
+
+    @ViewBuilder
     private var todayTaskPreview: some View {
-        Button {
-            router.go(.tasks)
-        } label: {
-            HStack(spacing: 11) {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .stroke(Color(hex: "C6CFDB"), lineWidth: 1.5)
-                    .frame(width: 21, height: 21)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Confirm coffee bean reorder").font(.appRowTitle()).foregroundColor(.primary)
-                    Text("High priority · Due 10:00 AM").font(.appCaption()).foregroundColor(.appMuted)
+        if let task = nextTask {
+            Button {
+                router.go(.tasks)
+            } label: {
+                HStack(spacing: 11) {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(Color(hex: "C6CFDB"), lineWidth: 1.5)
+                        .frame(width: 21, height: 21)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(task.title).font(.appRowTitle()).foregroundColor(.primary)
+                        Text("\(task.priority.rawValue) priority · \(task.time)").font(.appCaption()).foregroundColor(.appMuted)
+                    }
+                    Spacer()
+                    StatusBadge(text: task.priority.rawValue, tone: task.priority.tone)
                 }
-                Spacer()
-                StatusBadge(text: "High", tone: .danger)
+                .padding(12)
             }
-            .padding(12)
+            .buttonStyle(.press)
+            .appCard(padding: 0)
+        } else {
+            emptyCard(icon: "checkmark.circle", text: "No tasks for today.")
         }
-        .buttonStyle(.press)
+    }
+
+    private func emptyCard(icon: String, text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon).foregroundColor(.appMuted)
+            Text(text).font(.appCaption()).foregroundColor(.appMuted)
+            Spacer()
+        }
+        .padding(12)
         .appCard(padding: 0)
     }
 }

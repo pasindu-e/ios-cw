@@ -1,8 +1,16 @@
 import SwiftUI
 
+private struct ReportPreviewItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 struct RunDetailView: View {
     @EnvironmentObject var router: AppRouter
-    private let run = MockData.todayRun
+    @EnvironmentObject var store: MockDataStore
+    @State private var reportPreviewItem: ReportPreviewItem?
+
+    private var run: AgentRun? { store.todayRun }
 
     var body: some View {
         ScrollView {
@@ -11,23 +19,38 @@ struct RunDetailView: View {
                     StatusBadge(text: "Complete", tone: .success)
                 }
 
-                hero
-                stats
-                    .padding(.top, 4)
+                if let run {
+                    hero(run)
+                    stats(run)
+                        .padding(.top, 4)
 
-                Text("Execution trace").font(.appSectionTitle()).padding(.top, 22).padding(.bottom, 10)
-                executionList
+                    Text("Execution trace").font(.appSectionTitle()).padding(.top, 22).padding(.bottom, 10)
+                    executionList(run)
 
-                privacyCard
-                    .padding(.top, 12)
+                    privacyCard
+                        .padding(.top, 12)
+
+                    PrimaryButton(title: "Export PDF Report", systemImage: "doc.richtext") {
+                        let url = PDFReportGenerator.makeRunReport(for: run)
+                        reportPreviewItem = ReportPreviewItem(url: url)
+                    }
+                    .padding(.top, 16)
+                } else {
+                    Text("No run data yet.").font(.appCaption()).foregroundColor(.appMuted).padding(.top, 40)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .fullScreenCover(item: $reportPreviewItem) { item in
+            PDFReportPreviewScreen(url: item.url) {
+                reportPreviewItem = nil
+            }
+        }
     }
 
-    private var hero: some View {
+    private func hero(_ run: AgentRun) -> some View {
         VStack(spacing: 11) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.appNavy).frame(width: 44, height: 44)
@@ -41,7 +64,7 @@ struct RunDetailView: View {
         .padding(.vertical, 15)
     }
 
-    private var stats: some View {
+    private func stats(_ run: AgentRun) -> some View {
         HStack(spacing: 0) {
             statItem(value: "\(run.findingsCount)", label: "Issues")
             Divider().background(Color.appLine)
@@ -61,7 +84,7 @@ struct RunDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var executionList: some View {
+    private func executionList(_ run: AgentRun) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(run.executionTrace.enumerated()), id: \.element.id) { index, step in
                 HStack(alignment: .top, spacing: 11) {
@@ -109,5 +132,5 @@ struct RunDetailView: View {
 }
 
 #Preview {
-    RunDetailView().environmentObject(AppRouter())
+    RunDetailView().environmentObject(AppRouter()).environmentObject(MockDataStore())
 }

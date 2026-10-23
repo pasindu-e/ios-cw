@@ -4,6 +4,7 @@ struct OrdersView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var store: MockDataStore
     @State private var filter = "All"
+    @State private var showingAddOrder = false
 
     private let filters = ["All", "Pending", "Processing", "Delayed"]
 
@@ -11,19 +12,9 @@ struct OrdersView: View {
         filter == "All" ? store.orders : store.orders.filter { $0.status.rawValue == filter }
     }
 
-    /// Matches the prototype's dashboard-level counters, which represent the
-    /// full open-order book (8 orders, $1,284.75) even though only the 3
-    /// most relevant orders are modeled in detail for this demo.
-    private var headerOrderCount: Int { 8 }
-    private var headerTotalValue: Double { 1284.75 }
-
-    private var sectionCount: Int {
-        switch filter {
-        case "All": return 8
-        case "Delayed": return 1
-        default: return 3
-        }
-    }
+    private var headerOrderCount: Int { store.orders.count }
+    private var headerTotalValue: Double { store.orders.reduce(0) { $0 + $1.total } }
+    private var sectionCount: Int { filteredOrders.count }
 
     var body: some View {
         ScrollView {
@@ -52,6 +43,9 @@ struct OrdersView: View {
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .sheet(isPresented: $showingAddOrder) {
+            AddOrderView().environmentObject(store)
+        }
     }
 
     private var header: some View {
@@ -62,8 +56,10 @@ struct OrdersView: View {
                     .font(.appCaption()).foregroundColor(.appMuted)
             }
             Spacer()
-            Button {} label: {
-                Image(systemName: "magnifyingglass")
+            Button {
+                showingAddOrder = true
+            } label: {
+                Image(systemName: "plus")
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.appNavy)

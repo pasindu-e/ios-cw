@@ -4,6 +4,9 @@ struct ProductDetailView: View {
     let sku: String
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var store: MockDataStore
+    @State private var showingEdit = false
+    @State private var showingDeleteConfirm = false
+    @State private var deleteErrorMessage: String?
 
     private var product: Product? { store.product(sku: sku) }
 
@@ -11,10 +14,20 @@ struct ProductDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 BackHeader(title: "Product details", onBack: { router.go(.inventory) }) {
-                    Button("Edit") {}
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.appBlue)
+                    HStack(spacing: 14) {
+                        Button("Edit") { showingEdit = true }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.appBlue)
+                            .buttonStyle(.press)
+                        Button {
+                            showingDeleteConfirm = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.system(size: 13))
+                                .foregroundColor(.appDanger)
+                        }
                         .buttonStyle(.press)
+                    }
                 }
 
                 if let product {
@@ -34,12 +47,40 @@ struct ProductDetailView: View {
                         router.go(.reorder(sku: product.sku))
                     }
                     .padding(.top, 16)
+                } else {
+                    Text("Product not found").foregroundColor(.appMuted).padding(.top, 40)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .sheet(isPresented: $showingEdit) {
+            if let product {
+                AddProductView(productToEdit: product).environmentObject(store)
+            }
+        }
+        .alert("Delete Product?", isPresented: $showingDeleteConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                guard let product else { return }
+                store.deleteProduct(product) { result in
+                    switch result {
+                    case .success:
+                        router.go(.inventory)
+                    case .failure(let error):
+                        deleteErrorMessage = error.localizedDescription
+                    }
+                }
+            }
+        } message: {
+            Text("This removes \(product?.name ?? "this product") permanently.")
+        }
+        .alert("Couldn't Delete Product", isPresented: Binding(get: { deleteErrorMessage != nil }, set: { if !$0 { deleteErrorMessage = nil } })) {
+            Button("OK") { deleteErrorMessage = nil }
+        } message: {
+            Text(deleteErrorMessage ?? "")
+        }
     }
 
     private func productHero(_ product: Product) -> some View {

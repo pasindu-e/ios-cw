@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AgentResultsView: View {
     @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var store: MockDataStore
     @State private var showTrace = false
 
     var body: some View {
@@ -18,23 +19,30 @@ struct AgentResultsView: View {
                 HStack {
                     Text("Priority findings").font(.appSectionTitle())
                     Spacer()
-                    StatusBadge(text: "2 high", tone: .danger)
+                    if highPriorityCount > 0 {
+                        StatusBadge(text: "\(highPriorityCount) high", tone: .danger)
+                    }
                 }
                 .padding(.top, 22)
                 .padding(.bottom, 10)
 
-                ForEach(MockData.findings) { finding in
+                ForEach(store.displayedFindings) { finding in
                     FindingCard(finding: finding) {
                         router.go(finding.destination)
                     }
                     .padding(.bottom, 10)
                 }
 
-                PrimaryButton(title: "Create 3 Tasks", systemImage: "checkmark") {
-                    router.go(.tasks)
+                if !store.displayedFindings.isEmpty {
+                    PrimaryButton(title: "Create \(store.displayedFindings.count) Task\(store.displayedFindings.count == 1 ? "" : "s")", systemImage: "checkmark") {
+                        createTasks(from: store.displayedFindings)
+                        router.go(.tasks)
+                    }
                 }
-                SecondaryButton(title: "Review Reorder") {
-                    router.go(.reorder(sku: "COF-001"))
+                if let reorderSKU = firstReorderSKU {
+                    SecondaryButton(title: "Review Reorder") {
+                        router.go(.reorder(sku: reorderSKU))
+                    }
                 }
 
                 traceToggle
@@ -60,11 +68,42 @@ struct AgentResultsView: View {
                 Image(systemName: "checkmark").font(.system(size: 20, weight: .bold)).foregroundColor(Color(hex: "057565"))
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text("Your operations are ready").font(.system(size: 20, weight: .bold))
-                Text("3 findings · Prepared at 8:42 AM").font(.appCaption()).foregroundColor(.appMuted)
+                Text(store.latestAgentSummary ?? "Your operations are ready").font(.system(size: 20, weight: .bold))
+                Text("\(store.displayedFindings.count) finding\(store.displayedFindings.count == 1 ? "" : "s") · \(store.latestAgentSummary != nil ? "Prepared on-device" : "Rule-based review")")
+                    .font(.appCaption()).foregroundColor(.appMuted)
             }
         }
         .padding(.vertical, 12)
+    }
+
+    private var highPriorityCount: Int {
+        store.displayedFindings.filter { $0.severity == .highPriority }.count
+    }
+
+    private func createTasks(from findings: [AgentFinding]) {
+        for finding in findings {
+            let relatedTo: String
+            switch finding.destination {
+            case .product(let sku): relatedTo = sku
+            case .order(let id): relatedTo = id
+            case .reorder(let sku): relatedTo = sku
+            default: relatedTo = finding.title
+            }
+            let task = TaskItem(
+                title: finding.title,
+                relatedTo: relatedTo,
+                time: "Today",
+                priority: finding.severity == .highPriority ? .high : .medium
+            )
+            store.addTask(task) { _ in }
+        }
+    }
+
+    private var firstReorderSKU: String? {
+        for finding in store.displayedFindings {
+            if case .product(let sku) = finding.destination { return sku }
+        }
+        return nil
     }
 
     private var factLegend: some View {
@@ -103,7 +142,7 @@ struct AgentResultsView: View {
 
     private var traceCard: some View {
         VStack(spacing: 0) {
-            ForEach(MockData.traceLines) { line in
+            ForEach(store.latestAgentTrace ?? []) { line in
                 HStack(spacing: 9) {
                     StatusBadge(text: line.label, tone: line.tone)
                     Text(line.detail).font(.system(size: 10)).foregroundColor(.appMuted)
@@ -171,5 +210,5 @@ private struct FindingCard: View {
 }
 
 #Preview {
-    AgentResultsView().environmentObject(AppRouter())
+    AgentResultsView().environmentObject(AppRouter()).environmentObject(MockDataStore())
 }

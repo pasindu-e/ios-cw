@@ -14,7 +14,6 @@ struct RootView: View {
         }
         .background(router.isDarkScreen ? Color.appNavy : Color.appOffWhite)
         .preferredColorScheme(.light)
-        .ignoresSafeArea(.keyboard)
     }
 
     @ViewBuilder
@@ -46,6 +45,8 @@ struct RootView: View {
             RunDetailView()
         case .settings:
             SettingsView()
+        case .suppliers:
+            SuppliersView()
         }
     }
 }

@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject var store: MockDataStore
     @EnvironmentObject var auth: AuthStore
+    @State private var showingBusinessProfile = false
 
     var body: some View {
         ScrollView {
@@ -52,19 +53,29 @@ struct SettingsView: View {
             .padding(.bottom, 24)
         }
         .background(Color.appOffWhite)
+        .sheet(isPresented: $showingBusinessProfile) {
+            BusinessProfileView().environmentObject(store)
+        }
     }
 
     private var profileCard: some View {
-        HStack(spacing: 13) {
-            Circle()
-                .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 54, height: 54)
-                .overlay(Text(MockData.business.ownerInitials).font(.system(size: 14, weight: .bold)).foregroundColor(.white))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(MockData.business.ownerName).font(.system(size: 18, weight: .bold))
-                Text("\(MockData.business.role) · \(MockData.business.businessName)").font(.appCaption()).foregroundColor(.appMuted)
+        Button {
+            showingBusinessProfile = true
+        } label: {
+            HStack(spacing: 13) {
+                Circle()
+                    .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 54, height: 54)
+                    .overlay(Text(store.business.ownerInitials).font(.system(size: 14, weight: .bold)).foregroundColor(.white))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(store.business.ownerName).font(.system(size: 18, weight: .bold)).foregroundColor(.primary)
+                    Text("\(store.business.role) · \(store.business.businessName)").font(.appCaption()).foregroundColor(.appMuted)
+                }
+                Spacer()
+                Image(systemName: "pencil").font(.system(size: 13)).foregroundColor(.appMuted)
             }
         }
+        .buttonStyle(.press)
         .padding(.vertical, 6)
     }
 
@@ -97,12 +108,19 @@ struct SettingsView: View {
             .padding(.horizontal, 12)
             .frame(minHeight: 59)
         } else {
-            Button {} label: {
+            Button {
+                if row.title == "Suppliers & Map" {
+                    router.go(.suppliers)
+                } else if row.title == "Business profile" {
+                    showingBusinessProfile = true
+                }
+            } label: {
                 HStack(spacing: 11) {
                     iconTile(row.iconName)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(row.title).font(.appRowTitle()).foregroundColor(.primary)
-                        Text(row.subtitle).font(.appCaption()).foregroundColor(.appMuted)
+                        Text(rowSubtitle(for: row))
+                            .font(.appCaption()).foregroundColor(.appMuted)
                     }
                     Spacer()
                     Image(systemName: "chevron.right").font(.system(size: 14)).foregroundColor(.appMuted)
@@ -111,6 +129,14 @@ struct SettingsView: View {
                 .frame(minHeight: 59)
             }
             .buttonStyle(.press)
+        }
+    }
+
+    private func rowSubtitle(for row: SettingsRow) -> String {
+        switch row.title {
+        case "Suppliers & Map": return "\(store.suppliers.count) suppliers"
+        case "Business profile": return store.business.businessName
+        default: return row.subtitle
         }
     }
 

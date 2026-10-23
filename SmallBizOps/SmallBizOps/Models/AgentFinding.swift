@@ -1,6 +1,6 @@
 import Foundation
 
-enum FindingSeverity: String {
+enum FindingSeverity: String, Equatable {
     case highPriority = "HIGH PRIORITY"
     case medium = "MEDIUM"
 

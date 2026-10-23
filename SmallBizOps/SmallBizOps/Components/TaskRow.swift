@@ -3,6 +3,7 @@ import SwiftUI
 struct TaskRow: View {
     let task: TaskItem
     let onToggle: () -> Void
+    var onEdit: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: 11) {
@@ -39,6 +40,15 @@ struct TaskRow: View {
             }
             Spacer()
             StatusBadge(text: task.priority.rawValue, tone: task.priority.tone)
+            if let onEdit {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 12))
+                        .foregroundColor(.appMuted)
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(13)
         .appCard(padding: 0)

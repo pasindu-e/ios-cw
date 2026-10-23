@@ -1,10 +1,16 @@
 import SwiftUI
+import FirebaseCore
 
 @main
 struct SmallBizOpsApp: App {
     @StateObject private var router = AppRouter()
     @StateObject private var store = MockDataStore()
     @StateObject private var auth = AuthStore()
+
+    init() {
+        FirebaseConfiguration.shared.setLoggerLevel(.error)
+        FirebaseApp.configure()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -21,12 +27,16 @@ struct SmallBizOpsApp: App {
             .environmentObject(router)
             .environmentObject(store)
             .environmentObject(auth)
+            .onChange(of: auth.stage) { _, stage in
+                if stage == .authenticated {
+                    store.start()
+                } else if stage == .credentials {
+                    store.stop()
+                }
+            }
             .onAppear {
-                auth.stage = .authenticated
-                router.go(.settings)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    router.go(.home)
-                    auth.signOut()
+                if auth.stage == .authenticated {
+                    store.start()
                 }
             }
         }

@@ -1,7 +1,8 @@
 import SwiftUI
 import LocalAuthentication
+import FirebaseAuth
 
-enum AuthStage {
+enum AuthStage: Equatable {
     case credentials
     case faceIDSetup
     case authenticated
@@ -12,22 +13,35 @@ final class AuthStore: ObservableObject {
     @Published var stage: AuthStage = .credentials
     @Published var loginError: String?
     @Published var isCheckingBiometrics = false
+    @Published var isSigningIn = false
 
-    /// Mock credentials for this offline MVP — there is no backend.
-    private let mockUsername = "pasindu"
-    private let mockPassword = "12345678"
+    init() {
+        stage = Auth.auth().currentUser != nil ? .authenticated : .credentials
+    }
 
-    /// Validates the mock credentials, then hands off to the Face ID
+    /// Signs in with Firebase Authentication, then hands off to the Face ID
     /// enable/scan step rather than logging straight in.
     func signIn(username: String, password: String) {
-        let trimmed = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.lowercased() == mockUsername.lowercased(), password == mockPassword else {
-            loginError = "Incorrect username or password."
+        let email = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !email.isEmpty, !password.isEmpty else {
+            loginError = "Enter your email and password."
             return
         }
+
         loginError = nil
-        withAnimation(.easeInOut(duration: 0.25)) {
-            stage = .faceIDSetup
+        isSigningIn = true
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] _, error in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isSigningIn = false
+                if let error {
+                    self.loginError = error.localizedDescription
+                    return
+                }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    self.stage = .faceIDSetup
+                }
+            }
         }
     }
 
@@ -58,6 +72,9 @@ final class AuthStore: ObservableObject {
     }
 
     func signOut() {
+        try? Auth.auth().signOut()
+        loginError = nil
+        isCheckingBiometrics = false
         withAnimation(.easeInOut(duration: 0.25)) {
             stage = .credentials
         }

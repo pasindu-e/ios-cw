@@ -1,19 +1,63 @@
 import Foundation
 
+/// Seed content used once by `FirestoreSeeder` to populate an empty Firestore project.
 enum MockData {
-    static let business = Business(
-        ownerName: "Alex Garcia",
-        ownerInitials: "AG",
-        businessName: "Northstar Goods",
-        role: "Owner",
-        dateLabel: "TUESDAY, JUNE 18"
-    )
-
     static let products: [Product] = [
         Product(name: "Premium Coffee Beans", sku: "COF-001", stock: 4, minimum: 10, status: .lowStock, category: "Beverages", supplier: "Northline Roasters", unitCost: 12.50, averageDailyUsage: 1.4),
         Product(name: "Paper Cups", sku: "SUP-014", stock: 12, minimum: 20, status: .lowStock, category: "Supplies", supplier: "Cascade Packaging Co.", unitCost: 3.25, averageDailyUsage: 2.6),
         Product(name: "Vanilla Syrup", sku: "ING-022", stock: 28, minimum: 12, status: .inStock, category: "Ingredients", supplier: "Flavorworks Supply", unitCost: 8.10, averageDailyUsage: 0.9),
         Product(name: "Northstar Tote Bag", sku: "MER-008", stock: 42, minimum: 15, status: .inStock, category: "Merchandise", supplier: "Bluecrest Textiles", unitCost: 6.40, averageDailyUsage: 0.5),
+    ]
+
+    static let suppliers: [Supplier] = [
+        Supplier(
+            name: "Northline Roasters",
+            category: "Coffee Roaster",
+            address: "4210 NE Alberta St, Portland, OR",
+            city: "Portland, OR",
+            phone: "(503) 555-0131",
+            email: "orders@northlineroasters.com",
+            leadTimeDays: 3,
+            productsSupplied: ["Premium Coffee Beans"],
+            latitude: 45.5231,
+            longitude: -122.6765
+        ),
+        Supplier(
+            name: "Cascade Packaging Co.",
+            category: "Packaging Supplies",
+            address: "1830 SE Powell Blvd, Portland, OR",
+            city: "Portland, OR",
+            phone: "(503) 555-0187",
+            email: "sales@cascadepackaging.com",
+            leadTimeDays: 5,
+            productsSupplied: ["Paper Cups"],
+            latitude: 45.5051,
+            longitude: -122.6550
+        ),
+        Supplier(
+            name: "Flavorworks Supply",
+            category: "Ingredients",
+            address: "927 NW Raleigh St, Portland, OR",
+            city: "Portland, OR",
+            phone: "(503) 555-0164",
+            email: "hello@flavorworkssupply.com",
+            leadTimeDays: 4,
+            productsSupplied: ["Vanilla Syrup"],
+            latitude: 45.5300,
+            longitude: -122.6970
+        ),
+        Supplier(
+            name: "Bluecrest Textiles",
+            category: "Merchandise & Textiles",
+            address: "6600 N Interstate Ave, Portland, OR",
+            city: "Portland, OR",
+            phone: "(503) 555-0142",
+            email: "support@bluecresttextiles.com",
+            leadTimeDays: 7,
+            productsSupplied: ["Northstar Tote Bag"],
+            latitude: 45.5670,
+            longitude: -122.6800
+        ),
     ]
 
     static let orders: [Order] = [
@@ -89,42 +133,6 @@ enum MockData {
         TaskItem(title: "Update summer display", relatedTo: "Store operations", time: "5:00 PM", priority: .low),
     ]
 
-    static let findings: [AgentFinding] = [
-        AgentFinding(
-            severity: .highPriority,
-            title: "Premium Coffee Beans are critically low",
-            factLabel: "FACT",
-            factValue: "4 units",
-            copy: "remain; your minimum is 10.",
-            suggestion: "Review a reorder of 20 units to cover the next 14 days.",
-            destination: .product(sku: "COF-001")
-        ),
-        AgentFinding(
-            severity: .medium,
-            title: "Paper Cups are approaching minimum",
-            factLabel: nil,
-            factValue: nil,
-            copy: "12 units remain. Based on recent usage, stock may run out in 3 days.",
-            suggestion: nil,
-            destination: .product(sku: "SUP-014")
-        ),
-        AgentFinding(
-            severity: .highPriority,
-            title: "Order #ORD-1048 needs follow-up",
-            factLabel: nil,
-            factValue: nil,
-            copy: "The carrier update is 2 days overdue. I recommend contacting the customer today.",
-            suggestion: nil,
-            destination: .order(id: "#ORD-1048")
-        ),
-    ]
-
-    static let traceLines: [TraceLine] = [
-        TraceLine(tone: .info, label: "PLAN", detail: "Check stock against saved thresholds"),
-        TraceLine(tone: .neutral, label: "TOOL", detail: "Inventory.readAll → 24 records"),
-        TraceLine(tone: .success, label: "RESULT", detail: "2 products below target"),
-    ]
-
     static let todayRun = AgentRun(
         title: "Daily operations prepared",
         dateLabel: "Today",
@@ -140,7 +148,8 @@ enum MockData {
             ExecutionStep(kind: "TOOL CALL", title: "Orders.getOpen()", copy: "Returned 8 open orders · 0.6 sec"),
             ExecutionStep(kind: "RESULT", title: "Identified 3 operational issues", copy: "2 stock risks and 1 delayed customer order."),
             ExecutionStep(kind: "RECOMMEND", title: "Proposed 3 reviewable actions", copy: "No changes were made automatically."),
-        ]
+        ],
+        createdAt: Date()
     )
 
     static let yesterdayRun = AgentRun(
@@ -157,17 +166,19 @@ enum MockData {
             ExecutionStep(kind: "TOOL CALL", title: "Inventory.readAll()", copy: "Returned 24 product records · 0.7 sec"),
             ExecutionStep(kind: "RESULT", title: "Identified 2 operational issues", copy: "1 stock risk and 1 pending order."),
             ExecutionStep(kind: "RECOMMEND", title: "Proposed 2 reviewable actions", copy: "No changes were made automatically."),
-        ]
+        ],
+        createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
     )
 
     static let activityEvents: [ActivityEvent] = [
-        ActivityEvent(title: "Reorder approved", subtitle: "Paper Cups · 50 units · $175.00", time: "4:16 PM", isApproved: true),
-        ActivityEvent(title: "3 tasks completed", subtitle: "Daily operations tasks", time: "3:40 PM", isApproved: false),
+        ActivityEvent(title: "Reorder approved", subtitle: "Paper Cups · 50 units · $175.00", time: "4:16 PM", isApproved: true, createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()),
+        ActivityEvent(title: "3 tasks completed", subtitle: "Daily operations tasks", time: "3:40 PM", isApproved: false, createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()),
     ]
 
     static let settingsGroups: [SettingsGroup] = [
         SettingsGroup(title: "BUSINESS", rows: [
             SettingsRow(iconName: "building.2", title: "Business profile", subtitle: "Northstar Goods"),
+            SettingsRow(iconName: "map", title: "Suppliers & Map", subtitle: "\(MockData.suppliers.count) suppliers"),
             SettingsRow(iconName: "exclamationmark.triangle", title: "Stock thresholds", subtitle: "2 custom rules"),
             SettingsRow(iconName: "bell", title: "Notifications", subtitle: "Daily brief at 8:30 AM"),
         ]),
