@@ -62,6 +62,9 @@
 		F47D994DAB8F562AD3D9E05E /* SmallBizOpsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1ABF8763F32D627B02F555 /* SmallBizOpsApp.swift */; };
 		F7095128868F38ED0D24BBFA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E908D5478A2CF933A4A2EA9 /* RootView.swift */; };
 		FD642B23C73D181BF3997615 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBF0A72FD83117756B2B0C4 /* AppTypography.swift */; };
+		C7BCED8A99E4FC3847D17D3A /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B648C37F8F235C671CCC2C /* AppNotification.swift */; };
+		CBA750B86B541A9FE1F80226 /* NotificationBell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA83F454EE97D9C32FEBB6F4 /* NotificationBell.swift */; };
+		787284521B5B0976382D7959 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2124C7028CFAA79F5BA01163 /* NotificationsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -120,6 +123,9 @@
 		F77C1A887E665F324FBA15DC /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		4788C29F56F7FDF562D827FB /* AddOrderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrderView.swift; sourceTree = "<group>"; };
 		D5844FF5DEFFA6E133C122E6 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		37B648C37F8F235C671CCC2C /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
+		FA83F454EE97D9C32FEBB6F4 /* NotificationBell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBell.swift; sourceTree = "<group>"; };
+		2124C7028CFAA79F5BA01163 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +191,7 @@
 			children = (
 				C079402CA145B2F13B43E1BD /* AgentFinding.swift */,
 				97682429A21CF5511D7D72AE /* AgentRun.swift */,
+				37B648C37F8F235C671CCC2C /* AppNotification.swift */,
 				1021FE9D19BD7A63696817EE /* Business.swift */,
 				C97219CBE4326CFB9D6BD04E /* Order.swift */,
 				282137E3C267FFA96203959D /* Product.swift */,
@@ -268,6 +275,7 @@
 				DF6CCA29FA70C5799E6FB25F /* Dashboard */,
 				83B2CAC8CFA1D9C569DCE34F /* Inventory */,
 				FCCB6A0AF7B854FF42ED0F90 /* Orders */,
+				30B76AA0DE0A147F1C59E8CD /* Notifications */,
 				1E76732017186ED9FED52CC4 /* Settings */,
 				649ECD962B37FAD8ED02FC51 /* Suppliers */,
 				44FC47F8807B3DB08E9A1FF1 /* Tasks */,
@@ -311,6 +319,7 @@
 				D6A1E63587F5CDC1C3E475BC /* Badge.swift */,
 				DC18F9EED951AC389963453E /* BottomNav.swift */,
 				55C2F2AA5D5B80E03A12D160 /* KPICard.swift */,
+				FA83F454EE97D9C32FEBB6F4 /* NotificationBell.swift */,
 				113F172C1D2FE5D9265EC7DD /* OrderCard.swift */,
 				5545FF1938F210E910FFDBAE /* PrimaryButton.swift */,
 				5FC41F7E69DC12EFE466EAE2 /* ProductRow.swift */,
@@ -354,6 +363,14 @@
 				F77C1A887E665F324FBA15DC /* OrdersView.swift */,
 			);
 			path = Orders;
+			sourceTree = "<group>";
+		};
+		30B76AA0DE0A147F1C59E8CD /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				2124C7028CFAA79F5BA01163 /* NotificationsView.swift */,
+			);
+			path = Notifications;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -462,6 +479,9 @@
 				2A3D1AA814755AACF4EE32BA /* AgentFinding.swift in Sources */,
 				B65C0F2302C169D5121226F7 /* AgentResultsView.swift in Sources */,
 				94369080C4FF3A0AA0A3A5BD /* AgentRun.swift in Sources */,
+				C7BCED8A99E4FC3847D17D3A /* AppNotification.swift in Sources */,
+				CBA750B86B541A9FE1F80226 /* NotificationBell.swift in Sources */,
+				787284521B5B0976382D7959 /* NotificationsView.swift in Sources */,
 				1C0EA6D09573FCA0FB974C07 /* AgentRunningView.swift in Sources */,
 				AD9F8671364BE8912D99DC5A /* AppColors.swift in Sources */,
 				13156EDC7534C7BAC1264A14 /* AppRouter.swift in Sources */,

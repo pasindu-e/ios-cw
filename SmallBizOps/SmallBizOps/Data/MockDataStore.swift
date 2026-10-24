@@ -22,6 +22,7 @@ final class MockDataStore: ObservableObject {
     @Published var diagnosticMessage: String?
     @Published var isSeeding = false
     @Published var seedResultMessage: String?
+    @Published private var readNotificationIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "readNotificationIDs") ?? [])
 
     private let db = Firestore.firestore()
     private var listeners: [ListenerRegistration] = []
@@ -338,6 +339,70 @@ final class MockDataStore: ObservableObject {
 
     var todayRun: AgentRun? { agentRuns.first }
     var yesterdayRun: AgentRun? { agentRuns.dropFirst().first }
+
+    /// Notifications are derived live from current stock, order, and activity
+    /// state rather than stored separately, so they always reflect reality and
+    /// need no extra Firestore collection or seeding.
+    var notifications: [AppNotification] {
+        var items: [AppNotification] = []
+
+        for product in products.filter({ $0.status == .lowStock }).sorted(by: { $0.stock < $1.stock }) {
+            items.append(AppNotification(
+                id: "lowstock-\(product.sku)",
+                kind: .lowStock,
+                title: "\(product.name) is low on stock",
+                message: "\(product.stock) units left · minimum \(product.minimum)",
+                createdAt: Date(),
+                destination: .product(sku: product.sku)
+            ))
+        }
+
+        for order in orders.filter({ $0.status == .delayed }) {
+            items.append(AppNotification(
+                id: "delayed-\(order.id)",
+                kind: .delayedOrder,
+                title: "Order \(order.id) needs follow-up",
+                message: "The carrier update is overdue.",
+                createdAt: Date(),
+                destination: .order(id: order.id)
+            ))
+        }
+
+        for event in activityEvents {
+            items.append(AppNotification(
+                id: "activity-\(event.id)",
+                kind: .activity,
+                title: event.title,
+                message: event.subtitle,
+                createdAt: event.createdAt,
+                destination: .activity
+            ))
+        }
+
+        return items.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    var unreadNotificationCount: Int {
+        notifications.filter { !readNotificationIDs.contains($0.id) }.count
+    }
+
+    func isNotificationRead(_ id: String) -> Bool {
+        readNotificationIDs.contains(id)
+    }
+
+    func markNotificationRead(_ id: String) {
+        guard readNotificationIDs.insert(id).inserted else { return }
+        persistReadNotificationIDs()
+    }
+
+    func markAllNotificationsRead() {
+        readNotificationIDs.formUnion(notifications.map(\.id))
+        persistReadNotificationIDs()
+    }
+
+    private func persistReadNotificationIDs() {
+        UserDefaults.standard.set(Array(readNotificationIDs), forKey: "readNotificationIDs")
+    }
 
     /// Findings shown on the results screen: the on-device agent's output when
     /// available, otherwise the plain rule-based `findings` below.

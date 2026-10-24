@@ -15,6 +15,7 @@ enum Screen: Hashable {
     case runDetail
     case settings
     case suppliers
+    case notifications
 }
 
 /// Mirrors the React prototype's single `screen` state machine: each screen

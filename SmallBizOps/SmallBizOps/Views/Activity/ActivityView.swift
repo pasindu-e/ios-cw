@@ -56,14 +56,19 @@ struct ActivityView: View {
                 Text("Your business operations record").font(.appCaption()).foregroundColor(.appMuted)
             }
             Spacer()
-            Button {} label: {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.appNavy)
-                    .clipShape(Circle())
+            HStack(spacing: 8) {
+                NotificationBell(unreadCount: store.unreadNotificationCount) {
+                    router.go(.notifications)
+                }
+                Button {} label: {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.appNavy)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.press)
             }
-            .buttonStyle(.press)
         }
     }
 

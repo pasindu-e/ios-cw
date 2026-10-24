@@ -47,6 +47,8 @@ struct RootView: View {
             SettingsView()
         case .suppliers:
             SuppliersView()
+        case .notifications:
+            NotificationsView()
         }
     }
 }

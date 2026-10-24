@@ -55,19 +55,24 @@ struct HomeView: View {
                 Text(store.business.businessName).font(.system(size: 14)).foregroundColor(.appMuted)
             }
             Spacer()
-            Button {
-                router.go(.settings)
-            } label: {
-                ZStack(alignment: .bottomTrailing) {
-                    Circle()
-                        .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 44, height: 44)
-                        .overlay(Text(store.business.ownerInitials).font(.system(size: 12, weight: .bold)).foregroundColor(.white))
-                    Circle().fill(Color.appTeal).frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(Color.appOffWhite, lineWidth: 2))
+            HStack(spacing: 8) {
+                NotificationBell(unreadCount: store.unreadNotificationCount) {
+                    router.go(.notifications)
                 }
+                Button {
+                    router.go(.settings)
+                } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        Circle()
+                            .fill(LinearGradient(colors: [.appSlate, Color(hex: "34476C")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 44, height: 44)
+                            .overlay(Text(store.business.ownerInitials).font(.system(size: 12, weight: .bold)).foregroundColor(.white))
+                        Circle().fill(Color.appTeal).frame(width: 10, height: 10)
+                            .overlay(Circle().stroke(Color.appOffWhite, lineWidth: 2))
+                    }
+                }
+                .buttonStyle(.press)
             }
-            .buttonStyle(.press)
         }
         .padding(.bottom, 24)
     }

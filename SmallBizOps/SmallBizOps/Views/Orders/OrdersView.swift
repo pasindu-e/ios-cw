@@ -56,16 +56,21 @@ struct OrdersView: View {
                     .font(.appCaption()).foregroundColor(.appMuted)
             }
             Spacer()
-            Button {
-                showingAddOrder = true
-            } label: {
-                Image(systemName: "plus")
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.appNavy)
-                    .clipShape(Circle())
+            HStack(spacing: 8) {
+                NotificationBell(unreadCount: store.unreadNotificationCount) {
+                    router.go(.notifications)
+                }
+                Button {
+                    showingAddOrder = true
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.appNavy)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.press)
             }
-            .buttonStyle(.press)
         }
     }
 
