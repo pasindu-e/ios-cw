@@ -20,8 +20,6 @@ final class MockDataStore: ObservableObject {
     @Published var latestAgentTrace: [TraceLine]?
     @Published var business: Business = .placeholder
     @Published var diagnosticMessage: String?
-    @Published var isSeeding = false
-    @Published var seedResultMessage: String?
     @Published private var readNotificationIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "readNotificationIDs") ?? [])
 
     private let db = Firestore.firestore()
@@ -109,31 +107,6 @@ final class MockDataStore: ObservableObject {
             guard let self, let business = try? snapshot?.data(as: Business.self) else { return }
             self.business = business
         })
-
-        Task { [weak self] in
-            if case .failed(let error) = await FirestoreSeeder.seedIfNeeded(db: db) {
-                self?.diagnosticMessage = "Couldn't load starter data: \(error)"
-            }
-        }
-    }
-
-    /// Manually triggers the one-time seed (e.g. from a "Seed Mock Data" button).
-    /// Still a no-op if the `products` collection already has data.
-    func seedMockData() {
-        guard !isSeeding else { return }
-        isSeeding = true
-        Task { [weak self] in
-            guard let self else { return }
-            switch await FirestoreSeeder.seedIfNeeded(db: self.db) {
-            case .seeded:
-                self.seedResultMessage = "Mock data seeded successfully."
-            case .alreadySeeded:
-                self.seedResultMessage = "Mock data already exists — nothing to seed."
-            case .failed(let error):
-                self.seedResultMessage = "Failed to seed mock data: \(error)"
-            }
-            self.isSeeding = false
-        }
     }
 
     func product(sku: String) -> Product? {

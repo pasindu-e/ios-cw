@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum NotificationKind {
+enum NotificationKind: Equatable {
     case lowStock
     case delayedOrder
     case activity
